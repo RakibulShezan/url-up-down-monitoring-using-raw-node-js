@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "loadash": "^1.0.0"
+  },
+  "scripts": {
+    "start": "nodemon index"
+  }
+}
