@@ -2,7 +2,7 @@ const url = require("url");
 const { StringDecoder } = require("string_decoder");
 const routes = require("../routes");
 const { notFoundHandler } = require("../handlers/routeHandlers/notFound");
-
+const { parseJSON } = require("../helpers/utilities");
 const handler = {};
 
 handler.handleReqRes = (req, res) => {
@@ -38,16 +38,16 @@ handler.handleReqRes = (req, res) => {
 
   req.on("end", () => {
     realData += decoder.end();
+    requestProperties.body = parseJSON(realData);
     chosenHandler(requestProperties, (statusCode, payLoad) => {
       statusCode = typeof statusCode === "number" ? statusCode : 200;
       payLoad = typeof payLoad === "object" ? payLoad : {};
-
       const payLoadString = JSON.stringify(payLoad);
       //return the final response
+      res.setHeader("Content-type", "application/json");
       res.writeHead(statusCode);
       res.end(payLoadString);
     });
-    res.end("Hello Guys");
   });
 };
 

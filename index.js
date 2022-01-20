@@ -17,7 +17,7 @@ app.config = {
   port: 3000,
 };
 
-//data file create
+/* //data file create
 data.create(
   "test",
   "newFile",
@@ -40,7 +40,7 @@ data.update(
   function (err, result) {
     console.log(err, result);
   }
-);
+); */
 
 //data file delete
 
