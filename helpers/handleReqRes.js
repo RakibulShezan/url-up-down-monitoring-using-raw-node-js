@@ -42,7 +42,6 @@ handler.handleReqRes = (req, res) => {
     chosenHandler(requestProperties, (statusCode, payLoad) => {
       statusCode = typeof statusCode === "number" ? statusCode : 200;
       payLoad = typeof payLoad === "object" ? payLoad : {};
-
       const payLoadString = JSON.stringify(payLoad);
       //return the final response
       res.setHeader("Content-type", "application/json");
