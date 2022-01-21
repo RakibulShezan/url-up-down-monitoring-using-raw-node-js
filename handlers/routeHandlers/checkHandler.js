@@ -1,7 +1,7 @@
 const data = require("../../lib/data");
 const { parseJSON, createRandomString } = require("../../helpers/utilities");
 const tokenHandler = require("./tokenHandler");
-const { user } = require("../../routes");
+const { user, check } = require("../../routes");
 
 const handler = {};
 
@@ -135,7 +135,48 @@ handler._check.post = (requestProperties, callback) => {
   }
 };
 
-handler._check.get = (requestProperties, callback) => {};
+handler._check.get = (requestProperties, callback) => {
+  // check the id if valid
+  const id =
+    typeof requestProperties.queryStringObject.id === "string" &&
+    requestProperties.queryStringObject.id.trim().length === 20
+      ? requestProperties.queryStringObject.id
+      : false;
+  if (id) {
+    //lookup the check
+    data.read("checks", id, (err, checkData) => {
+      if (!err && checkData) {
+        const token =
+          typeof requestProperties.headersObject.token === "string"
+            ? requestProperties.headersObject.token
+            : false;
+
+        tokenHandler._token.verify(
+          token,
+          parseJSON(checkData).userPhone,
+          (tokenisValid) => {
+            if (tokenisValid) {
+              //return the data about the check
+              callback(200, parseJSON(checkData));
+            } else {
+              callback(403, {
+                error: "User authentication failed",
+              });
+            }
+          }
+        );
+      } else {
+        callback(500, {
+          error: "There was a problem in the server side",
+        });
+      }
+    });
+  } else {
+    callback(400, {
+      error: "There was a problem in your request!",
+    });
+  }
+};
 handler._check.put = (requestProperties, callback) => {};
 
 handler._check.delete = (requestProperties, callback) => {};
