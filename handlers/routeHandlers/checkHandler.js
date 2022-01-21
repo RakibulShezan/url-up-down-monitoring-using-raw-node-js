@@ -1,7 +1,7 @@
 const data = require("../../lib/data");
-const { hash } = require("../../helpers/utilities");
-const { parseJSON } = require("../../helpers/utilities");
+const { parseJSON, createRandomString } = require("../../helpers/utilities");
 const tokenHandler = require("./tokenHandler");
+const { user } = require("../../routes");
 
 const handler = {};
 
@@ -33,7 +33,7 @@ handler._check.post = (requestProperties, callback) => {
 
   let method =
     typeof requestProperties.body.method === "string" &&
-    ["get", "post", "put", "delete"].indexOf(requestProperties.body.method) > -1
+    ["GET", "POST", "PUT", "DELETE"].indexOf(requestProperties.body.method) > -1
       ? requestProperties.body.method
       : false;
   let successCodes =
@@ -49,6 +49,90 @@ handler._check.post = (requestProperties, callback) => {
     requestProperties.body.timeoutSeconds <= 5
       ? requestProperties.body.timeoutSeconds
       : false;
+
+  if (protocol && url && method && successCodes && timeoutSeconds) {
+    const token =
+      typeof requestProperties.headersObject.token === "string"
+        ? requestProperties.headersObject.token
+        : false;
+
+    // lookup the user phone by reading the token
+    data.read("tokens", token, (err, tokenData) => {
+      if (!err && tokenData) {
+        let userPhone = parseJSON(tokenData).phone;
+
+        //lookup the userData
+        data.read("users", userPhone, (err, userData) => {
+          if (!err && userData) {
+            tokenHandler._token.verify(token, userPhone, (tokenisValid) => {
+              if (tokenisValid) {
+                let userObject = parseJSON(userData);
+                let userChecks =
+                  typeof userObject.checks === "object" &&
+                  userObject.checks instanceof Array
+                    ? user.checks.length
+                    : [];
+                if (userChecks.length <= 5) {
+                  let checkId = createRandomString(20);
+                  let checkObject = {
+                    id: checkId,
+                    userPhone: userPhone,
+                    protocol: protocol,
+                    url: url,
+                    method: method,
+                    successCodes: successCodes,
+                    timeOutSeconds: timeoutSeconds,
+                  };
+
+                  //save the object to database
+
+                  data.create("checks", checkId, checkObject, (err) => {
+                    if (!err) {
+                      //add checkId to the users object in users folder
+                      userObject.checks = userChecks;
+                      userObject.checks.push(checkId);
+
+                      //save the new user data
+                      data.update("users", userPhone, userObject, (err) => {
+                        if (!err) {
+                          //return the data about the new check
+                          callback(200, checkObject);
+                        } else {
+                          callback(500, {
+                            error: "There was a problem in the server side",
+                          });
+                        }
+                      });
+                    } else {
+                      callback(500, {
+                        error: "There was a problem in the server side",
+                      });
+                    }
+                  });
+                }
+              } else {
+                callback(401, {
+                  error: "User has already reached max checked limit",
+                });
+              }
+            });
+          } else {
+            callback(404, {
+              error: "Requested user not found",
+            });
+          }
+        });
+      } else {
+        callback(403, {
+          error: "User authentication failed",
+        });
+      }
+    });
+  } else {
+    callback(400, {
+      error: "There was a problem in your request!",
+    });
+  }
 };
 
 handler._check.get = (requestProperties, callback) => {};
