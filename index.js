@@ -2,19 +2,23 @@
 const http = require("http");
 
 const { handleReqRes } = require("./helpers/handleReqRes");
-const environment = require("./helpers/environments");
-const data = require("./lib/data");
+
+const { sendTwilioSms } = require("./helpers/notifications");
 
 //app object -module scaffholding
 
 const app = {};
 
 //testing file system
-// @TODO: pore muche dibo
+
+// @TODO remove later
+sendTwilioSms("01797009702", "Hello World", (err) => {
+  console.log(`This is the error`, err);
+});
 
 //config
 app.config = {
-  port: 3000,
+  port: 3001,
 };
 
 /* //data file create
