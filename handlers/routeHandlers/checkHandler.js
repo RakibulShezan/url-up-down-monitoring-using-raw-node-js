@@ -70,7 +70,7 @@ handler._check.post = (requestProperties, callback) => {
                 let userChecks =
                   typeof userObject.checks === "object" &&
                   userObject.checks instanceof Array
-                    ? user.checks.length
+                    ? userObject.checks.length
                     : [];
                 if (userChecks.length <= 5) {
                   let checkId = createRandomString(20);
